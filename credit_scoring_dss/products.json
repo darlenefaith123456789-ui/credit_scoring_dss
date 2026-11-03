@@ -1,0 +1,67 @@
+{
+  "note": "Sample catalog. Replace names, prices and terms with the partner dealer's actual price list.",
+  "currency": "PHP",
+  "financing": {
+    "min_downpayment_pct": 10,
+    "default_downpayment_pct": 20,
+    "terms_months": [12, 18, 24, 36],
+    "interest_rate_pa": 24,
+    "computation_mode": 2
+  },
+  "products": [
+    {
+      "id": "UB110",
+      "name": "Underbone 110",
+      "category": "Underbone",
+      "engine_cc": 110,
+      "price": 62900,
+      "use": "Daily commute, light cargo",
+      "description": "Fuel-efficient manual underbone for farm-to-market and town trips."
+    },
+    {
+      "id": "UB125",
+      "name": "Underbone 125 Deluxe",
+      "category": "Underbone",
+      "engine_cc": 125,
+      "price": 74500,
+      "use": "Commute, light cargo",
+      "description": "Wider seat and disc brake for riders carrying produce or a passenger."
+    },
+    {
+      "id": "SC125",
+      "name": "Scooter 125",
+      "category": "Scooter",
+      "engine_cc": 125,
+      "price": 79900,
+      "use": "City and town commute",
+      "description": "Automatic scooter with under-seat storage, easy for first-time riders."
+    },
+    {
+      "id": "SC160",
+      "name": "Scooter 160 Premium",
+      "category": "Scooter",
+      "engine_cc": 160,
+      "price": 112000,
+      "use": "Long-distance commute",
+      "description": "Larger automatic with ABS, suited to daily highway travel."
+    },
+    {
+      "id": "BB150",
+      "name": "Business 150",
+      "category": "Business",
+      "engine_cc": 150,
+      "price": 89900,
+      "use": "Delivery, sidecar conversion",
+      "description": "Reinforced frame for tricycle sidecar or delivery box use."
+    },
+    {
+      "id": "TR200",
+      "name": "Trail 200",
+      "category": "Off-road",
+      "engine_cc": 200,
+      "price": 118500,
+      "use": "Farm roads, rough terrain",
+      "description": "High-clearance trail bike for upland and unpaved barangay roads."
+    }
+  ]
+}

@@ -1,0 +1,122 @@
+/* Credit Scoring DSS — shared component styles (Tailwind handles layout utilities) */
+:root {
+  --brand: #1d5c50;
+  --brand-soft: #e2eeea;
+  --ink: #18221f;
+  --line: #d8ded9;
+  --muted: #5d6a65;
+  --low: #2f7a46;  --low-bg: #e3f1e6;
+  --mid: #a8690f;  --mid-bg: #fbefd9;
+  --high: #b23a2e; --high-bg: #f8e2df;
+}
+
+[hidden] { display: none !important; }
+.text-balance { text-wrap: balance; }
+.tabular-nums, .data-table td, .stat dd { font-variant-numeric: tabular-nums; }
+
+/* Navigation */
+.nav-link { display: block; padding: .5rem .85rem; border-radius: .375rem; font-weight: 500; color: #475569; }
+.nav-link:hover { background: var(--brand-soft); color: var(--brand); }
+.nav-link-active { background: var(--brand-soft); color: var(--brand); font-weight: 600; }
+
+/* Type helpers */
+.eyebrow { font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; color: var(--muted); }
+.section-title { font-family: Archivo, 'Helvetica Neue', Arial, sans-serif; font-weight: 700; font-size: 1.35rem; }
+.legend { font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; color: var(--brand); margin-bottom: .25rem; }
+
+/* Surfaces */
+.card { background: #fff; border: 1px solid var(--line); border-radius: .625rem; }
+.notice { font-size: .85rem; background: var(--mid-bg); color: #6b430a; padding: .5rem .75rem; border-radius: .375rem; }
+.step-num { display: inline-grid; place-items: center; width: 2rem; height: 2rem; border-radius: 999px;
+            background: var(--brand); color: #fff; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+
+/* Buttons */
+.btn-primary, .btn-ghost { display: inline-block; font-weight: 600; font-size: .95rem; padding: .65rem 1.15rem;
+                           border-radius: .375rem; border: 1px solid var(--brand); cursor: pointer; transition: filter .15s; }
+.btn-primary { background: var(--brand); color: #fff; }
+.btn-ghost { background: transparent; color: var(--brand); }
+.btn-primary:hover, .btn-ghost:hover { filter: brightness(1.1); }
+.btn-primary:disabled { opacity: .6; cursor: wait; }
+.btn-sm { padding: .4rem .8rem; font-size: .85rem; }
+.notice-info { font-size: .85rem; background: var(--brand-soft); color: var(--brand); padding: .5rem .75rem; border-radius: .375rem; }
+.login-dot { width: .7rem; height: .7rem; border-radius: 999px; margin-top: .35rem; flex: none; }
+.bg-mid { background: var(--mid); }
+.link-btn { font-size: .8rem; color: var(--brand); font-weight: 600; text-decoration: underline; }
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+/* Form */
+.field-grid { display: grid; gap: .75rem 1rem; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.field { display: grid; gap: .3rem; font-size: .85rem; font-weight: 500; color: var(--muted); min-width: 0; align-content: start; }
+.input { width: 100%; font: inherit; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: .9rem; color: var(--ink);
+         background: #fff; border: 1px solid var(--line); border-radius: .375rem; padding: .55rem .7rem; }
+.input[readonly] { background: #f1f4f2; }
+.input-invalid { border-color: var(--high); background: var(--high-bg); }
+.field-error { color: var(--high); font-size: .78rem; min-height: 0; }
+.field-error:empty { display: none; }
+
+/* Risk pills and dashboard */
+.pill { display: inline-block; font-size: .75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+        padding: .25rem .7rem; border-radius: 999px; }
+.pill-low { background: var(--low-bg); color: var(--low); }
+.pill-medium { background: var(--mid-bg); color: var(--mid); }
+.pill-high { background: var(--high-bg); color: var(--high); }
+#dashboard[data-level="low"] { border-top: 4px solid var(--low); }
+#dashboard[data-level="medium"] { border-top: 4px solid var(--mid); }
+#dashboard[data-level="high"] { border-top: 4px solid var(--high); }
+
+.gauge { display: grid; height: 14px; border-radius: 7px; overflow: hidden; }
+.gauge span:nth-child(1) { background: var(--low-bg); }
+.gauge span:nth-child(2) { background: var(--mid-bg); }
+.gauge span:nth-child(3) { background: var(--high-bg); }
+.gauge-marker { position: absolute; top: -4px; width: 4px; height: 22px; background: var(--ink); border-radius: 2px;
+                transform: translateX(-50%); transition: left .3s ease; }
+
+.stat { background: #f6f8f7; border-radius: .375rem; padding: .6rem .75rem; }
+.stat dt { font-size: .75rem; color: var(--muted); }
+.stat dd { font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 600; font-size: 1.05rem; margin-top: .1rem; }
+
+.alert { font-size: .85rem; background: var(--high-bg); color: var(--high); padding: .5rem .75rem; border-radius: .375rem; }
+
+.factor { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 3.5rem; gap: .6rem; align-items: center; font-size: .85rem; }
+.factor-bar { position: relative; height: 8px; border-radius: 4px; background: #eef1ef; }
+.factor-bar::after { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--line); }
+.factor-bar i { position: absolute; top: 0; bottom: 0; border-radius: 4px; }
+
+/* Risk colours used by the dashboard script (defined here so they never depend on Tailwind) */
+.bg-low { background: var(--low); }   .bg-high { background: var(--high); }
+.text-low { color: var(--low); }      .text-mid { color: var(--mid); }   .text-high { color: var(--high); }
+
+/* My account */
+.account-link { display: block; padding: .3rem .6rem; border-radius: .375rem; }
+.account-link:hover { background: var(--brand-soft); }
+.card-attention { border-color: var(--high); box-shadow: 0 0 0 3px var(--high-bg); }
+.justify-self-start { justify-self: start; }
+.default-pw-bar { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: .4rem 1rem;
+                  padding: .55rem 1rem; background: var(--high-bg); color: var(--high); font-size: .875rem; font-weight: 500; }
+.default-pw-link { font-weight: 700; text-decoration: underline; color: var(--high); }
+
+/* Users page */
+.badge { display: inline-grid; place-items: center; min-width: 1.3rem; height: 1.3rem; padding: 0 .35rem;
+         border-radius: 999px; background: var(--high); color: #fff; font-size: .72rem; font-weight: 700; }
+.request-card { border-left: 4px solid var(--mid); }
+details.reset { position: relative; }
+details.reset summary { list-style: none; }
+details.reset summary::-webkit-details-marker { display: none; }
+.reset-form { position: absolute; right: 0; top: calc(100% + 6px); z-index: 5; display: flex; gap: .5rem; width: 19rem;
+              padding: .6rem; background: #fff; border: 1px solid var(--line); border-radius: .5rem;
+              box-shadow: 0 8px 24px rgba(24, 34, 31, .12); }
+.users-table td { vertical-align: top; }
+
+.look-item { border-left: 3px solid var(--brand); padding: .25rem 0 .25rem .85rem; }
+
+/* Tables */
+.data-table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+.data-table th, .data-table td { padding: .6rem .85rem; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.data-table th:first-child, .data-table td:first-child { text-align: left; }
+.data-table th { font-size: .72rem; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 600; background: #f6f8f7; }
+.data-table td { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+.data-table td:first-child { font-family: 'Public Sans', system-ui, sans-serif; font-weight: 500; }
+.data-table tbody tr:last-child td { border-bottom: 0; }
+.row-selected td { background: var(--brand-soft); }
+
+@media (prefers-reduced-motion: reduce) { .gauge-marker, .btn-primary, .btn-ghost { transition: none; } }

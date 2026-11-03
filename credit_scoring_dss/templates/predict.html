@@ -1,0 +1,360 @@
+{% extends 'base.html' %}
+{% block title %}Assess applicant{% endblock %}
+
+{% macro select(id, label, options, default) -%}
+<label class="field">
+  <span>{{ label }}</span>
+  <select id="{{ id }}" name="{{ id }}" class="input" required>
+    {% for name in options %}
+    <option value="{{ loop.index0 }}" {% if loop.index0 == default %}selected{% endif %}>{{ name }}</option>
+    {% endfor %}
+  </select>
+  <small class="field-error" data-error-for="{{ id }}"></small>
+</label>
+{%- endmacro %}
+
+{% macro number(id, label, step='1', min='0', value='', placeholder='') -%}
+<label class="field">
+  <span>{{ label }}</span>
+  <input id="{{ id }}" name="{{ id }}" type="number" step="{{ step }}" min="{{ min }}" value="{{ value }}"
+         placeholder="{{ placeholder }}" class="input" required>
+  <small class="field-error" data-error-for="{{ id }}"></small>
+</label>
+{%- endmacro %}
+
+{% block content %}
+<div class="flex flex-wrap items-end justify-between gap-3 border-b-2 border-ink pb-4">
+  <div>
+    <p class="eyebrow">Loan application</p>
+    <h1 class="font-display font-extrabold text-3xl">Assess an applicant</h1>
+  </div>
+  {% if not db_available %}
+  <p class="notice">MySQL is not connected. Assessments are scored but not saved. See README for setup.</p>
+  {% endif %}
+</div>
+
+<div class="grid lg:grid-cols-[1.15fr_1fr] gap-8 mt-6 items-start">
+  <!-- ======================= INPUT FORM ======================= -->
+  <form id="application-form" class="grid gap-7" novalidate>
+    <fieldset class="grid gap-3">
+      <legend class="legend">Applicant</legend>
+      <label class="field">
+        <span>Applicant name or reference <em class="not-italic text-slate-400">(optional)</em></span>
+        <input id="applicant_name" name="applicant_name" type="text" maxlength="120" class="input" placeholder="e.g. Juan Dela Cruz or APP-2026-0153">
+      </label>
+      <div class="field-grid">
+        {{ number('age', 'Age (years)', min='18', placeholder='18–100') }}
+        {{ select('marital_status', 'Marital status', labels.marital_status, 1) }}
+        {{ select('employment_type', 'Occupation', labels.employment_type, 9) }}
+      </div>
+    </fieldset>
+
+    <fieldset class="grid gap-3">
+      <legend class="legend">Income and existing debt</legend>
+      <div class="field-grid">
+        {{ number('monthly_income', 'Monthly income (₱)', step='100', min='1', placeholder='e.g. 18000') }}
+        {{ number('current_debt', 'Current debt balance (₱)', step='100', value='0') }}
+      </div>
+    </fieldset>
+
+    <fieldset class="grid gap-3">
+      <legend class="legend">Motorcycle and loan</legend>
+      <div class="field-grid">
+        <label class="field">
+          <span>Motorcycle</span>
+          <select id="product_id" name="product_id" class="input">
+            <option value="">Other loan (no motorcycle)</option>
+            {% for p in catalog.products %}
+            <option value="{{ p.id }}" {% if p.id == selected_product %}selected{% endif %}>{{ p.name }} · {{ p.price|peso }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="field" id="downpayment-field">
+          <span>Downpayment (%)</span>
+          <input id="downpayment_pct" type="number" min="{{ catalog.financing.min_downpayment_pct }}" max="90" step="1"
+                 value="{{ catalog.financing.default_downpayment_pct }}" class="input">
+          <small class="text-xs text-slate-500" id="downpayment-amount"></small>
+        </label>
+        {{ number('credit_amount', 'Credit amount (₱)', step='100', min='1', placeholder='Amount financed') }}
+        <label class="field">
+          <span>Term (months)</span>
+          <input id="term_months" name="term_months" type="number" min="1" max="120" step="1" list="term-options"
+                 value="{{ catalog.financing.terms_months[1] }}" class="input" required>
+          <datalist id="term-options">
+            {% for t in catalog.financing.terms_months %}<option value="{{ t }}"></option>{% endfor %}
+          </datalist>
+          <small class="field-error" data-error-for="term_months"></small>
+        </label>
+        {{ number('interest_rate_pa', 'Interest rate (% per year)', step='0.5', value=defaults.interest_rate_pa) }}
+        {{ select('computation_mode', 'Interest computation', labels.computation_mode, defaults.computation_mode) }}
+        {{ select('loan_product', 'Loan product type', labels.loan_product, defaults.loan_product) }}
+        <label class="field">
+          <span class="flex justify-between gap-2">Monthly installment (₱)
+            <button type="button" id="recalc" class="link-btn" hidden>Recalculate</button>
+          </span>
+          <input id="monthly_payment" name="monthly_payment" type="number" step="0.01" min="0" class="input" required>
+          <small class="text-xs text-slate-500" id="installment-hint">Calculated from amount, rate, term and computation.</small>
+          <small class="field-error" data-error-for="monthly_payment"></small>
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset class="grid gap-3">
+      <legend class="legend">Repayment record</legend>
+      <div class="field-grid">
+        {{ number('missed_payments_count', 'Missed payments on past loans', value='0') }}
+        {{ number('late_payment_penalty', 'Late payment penalties paid (₱)', step='10', value='0') }}
+      </div>
+    </fieldset>
+
+    <div class="flex flex-wrap gap-3 items-center">
+      <button type="submit" class="btn-primary" id="submit-btn">Assess applicant</button>
+      <button type="reset" class="btn-ghost" id="reset-btn">Clear form</button>
+      <span id="form-status" class="text-sm text-slate-500" role="status"></span>
+    </div>
+  </form>
+
+  <!-- ======================= RECOMMENDATION DASHBOARD ======================= -->
+  <section id="dashboard" class="card p-6 lg:sticky lg:top-24" aria-live="polite">
+    <p class="eyebrow">Recommendation</p>
+
+    <div id="empty-state" class="py-10 text-slate-500">
+      <p class="font-display font-bold text-ink text-lg">No assessment yet</p>
+      <p class="mt-1 text-sm">Fill in the application and select <b>Assess applicant</b>. The risk level, recommendation and the factors behind it will appear here.</p>
+    </div>
+
+    <div id="result" hidden>
+      <div class="flex flex-wrap justify-between items-start gap-4 mt-2">
+        <div>
+          <div class="font-display font-extrabold text-6xl leading-none tabular-nums" id="r-prob"></div>
+          <p class="text-sm text-slate-500 mt-1">estimated chance of default</p>
+        </div>
+        <div class="text-right">
+          <span class="pill" id="r-level"></span>
+          <p class="font-display font-bold text-xl mt-2" id="r-rec"></p>
+          <p class="text-sm text-slate-500">Credit score <b class="font-mono text-ink" id="r-score"></b> / 100</p>
+        </div>
+      </div>
+
+      <div class="relative mt-6" aria-hidden="true">
+        <div class="gauge" style="grid-template-columns: {{ (bands.low_below*100)|int }}fr {{ ((bands.high_from-bands.low_below)*100)|int }}fr {{ (100 - bands.high_from*100)|int }}fr">
+          <span class="bg-low/15"></span><span class="bg-mid/15"></span><span class="bg-high/15"></span>
+        </div>
+        <div class="gauge-marker" id="r-marker"></div>
+        <div class="relative h-4 mt-1 text-[11px] font-mono text-slate-500">
+          <span class="absolute left-0">0%</span>
+          <span class="absolute -translate-x-1/2" style="left: {{ (bands.low_below*100)|int }}%">{{ (bands.low_below*100)|int }}%</span>
+          <span class="absolute -translate-x-1/2" style="left: {{ (bands.high_from*100)|int }}%">{{ (bands.high_from*100)|int }}%</span>
+          <span class="absolute right-0">100%</span>
+        </div>
+      </div>
+
+      <dl class="grid grid-cols-2 gap-3 mt-6 text-sm">
+        <div class="stat"><dt>Monthly installment</dt><dd id="r-installment"></dd></div>
+        <div class="stat"><dt>Debt-to-income (DTI)</dt><dd id="r-dti"></dd></div>
+      </dl>
+
+      <ul id="r-alerts" class="mt-4 grid gap-2"></ul>
+
+      <h2 class="font-display font-bold mt-6">Key factors</h2>
+      <p class="text-xs text-slate-500">How far each input moved the score from the model's starting point of <span id="r-base"></span>, in percentage points. Red raises risk, green lowers it.</p>
+      <div id="r-factors" class="grid gap-2 mt-3"></div>
+
+      <div class="flex flex-wrap gap-x-5 gap-y-1 border-t border-slate-200 mt-6 pt-4 text-sm text-slate-500">
+        <span>Random Forest <b class="font-mono text-ink" id="r-rf"></b></span>
+        <span>Logistic Regression <b class="font-mono text-ink" id="r-lr"></b></span>
+        <span>Decision Tree <b class="font-mono text-ink" id="r-dt"></b></span>
+      </div>
+      <p class="text-xs text-slate-500 mt-3" id="r-saved"></p>
+    </div>
+  </section>
+</div>
+
+{% if db_available %}
+<section class="mt-12">
+  <h2 class="section-title">Recent assessments</h2>
+  <div class="overflow-x-auto card mt-4">
+    <table class="data-table" id="history">
+      <thead><tr><th>#</th><th>Applicant</th><th>Motorcycle</th><th>Amount</th><th>Term</th><th>DTI</th><th>Risk</th><th>Recommendation</th><th>Officer</th><th>Date</th></tr></thead>
+      <tbody><tr><td colspan="10" class="text-slate-500">No saved assessments yet.</td></tr></tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const CATALOG = {{ catalog|tojson }};
+  const DB = {{ 'true' if db_available else 'false' }};
+  const $ = (id) => document.getElementById(id);
+  const form = $('application-form');
+  const peso = (v) => '₱' + Number(v).toLocaleString('en-PH', { maximumFractionDigits: 2 });
+  const pct = (v, d = 1) => (v * 100).toFixed(d) + '%';
+  let manualInstallment = false;
+
+  // ---------------- motorcycle -> credit amount
+  function productById(id) { return CATALOG.products.find((p) => p.id === id); }
+  function applyProduct() {
+    const p = productById($('product_id').value);
+    $('downpayment-field').hidden = !p;
+    $('credit_amount').readOnly = !!p;
+    if (p) {
+      const dp = Math.min(90, Math.max(CATALOG.financing.min_downpayment_pct, Number($('downpayment_pct').value) || 0));
+      const down = Math.round(p.price * dp / 100);
+      $('downpayment-amount').textContent = peso(down) + ' down';
+      $('credit_amount').value = p.price - down;
+    }
+    updateInstallment();
+  }
+
+  // ---------------- installment (server formula, single source of truth)
+  let timer = null;
+  function updateInstallment() {
+    if (manualInstallment) return;
+    clearTimeout(timer);
+    timer = setTimeout(async () => {
+      const q = new URLSearchParams({ amount: $('credit_amount').value, rate: $('interest_rate_pa').value,
+                                      term: $('term_months').value, mode: $('computation_mode').value });
+      if (!(Number(q.get('amount')) > 0 && Number(q.get('term')) > 0 && q.get('rate') !== '')) return;
+      try {
+        const res = await fetch('/api/installment?' + q);
+        const data = await res.json();
+        if (data.ok) $('monthly_payment').value = data.monthly_payment.toFixed(2);
+      } catch (e) { /* leave the field for manual entry */ }
+    }, 200);
+  }
+  ['credit_amount', 'interest_rate_pa', 'term_months', 'computation_mode'].forEach((id) =>
+    $(id).addEventListener('input', updateInstallment));
+  $('product_id').addEventListener('change', applyProduct);
+  $('downpayment_pct').addEventListener('input', applyProduct);
+  $('monthly_payment').addEventListener('input', () => {
+    manualInstallment = true;
+    $('recalc').hidden = false;
+    $('installment-hint').textContent = 'Entered manually.';
+  });
+  $('recalc').addEventListener('click', () => {
+    manualInstallment = false;
+    $('recalc').hidden = true;
+    $('installment-hint').textContent = 'Calculated from amount, rate, term and computation.';
+    updateInstallment();
+  });
+
+  // ---------------- submit
+  function clearErrors() {
+    document.querySelectorAll('.field-error').forEach((el) => (el.textContent = ''));
+    document.querySelectorAll('.input-invalid').forEach((el) => el.classList.remove('input-invalid'));
+  }
+  function showErrors(errors) {
+    Object.entries(errors).forEach(([field, msg]) => {
+      const slot = document.querySelector(`[data-error-for="${field}"]`);
+      if (slot) slot.textContent = msg;
+      if ($(field)) $(field).classList.add('input-invalid');
+    });
+    const first = Object.keys(errors)[0];
+    if ($(first)) $(first).focus();
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearErrors();
+    const payload = Object.fromEntries(new FormData(form).entries());
+    const p = productById($('product_id').value);
+    payload.product_id = p ? p.id : '';
+    payload.product_name = p ? p.name : '';
+    $('submit-btn').disabled = true;
+    $('form-status').textContent = 'Assessing…';
+    try {
+      const res = await fetch('/api/predict', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify(payload) });
+      if (res.status === 401) { window.location.href = '{{ url_for('login') }}'; return; }
+      const data = await res.json();
+      if (!data.ok) { showErrors(data.errors || {}); $('form-status').textContent = 'Check the highlighted fields.'; return; }
+      render(data);
+      $('form-status').textContent = '';
+      if (DB) loadHistory();
+    } catch (err) {
+      $('form-status').textContent = 'The server did not respond. Check that app.py is running.';
+    } finally {
+      $('submit-btn').disabled = false;
+    }
+  });
+
+  // ---------------- dashboard
+  function render(d) {
+    const lvl = d.risk_level.toLowerCase();
+    $('empty-state').hidden = true;
+    $('result').hidden = false;
+    $('dashboard').dataset.level = lvl;
+    $('r-prob').textContent = pct(d.probability);
+    $('r-level').className = 'pill pill-' + lvl;
+    $('r-level').textContent = d.risk_level + ' risk';
+    $('r-rec').textContent = d.recommendation;
+    $('r-rec').className = 'font-display font-bold text-xl mt-2 text-' + (lvl === 'medium' ? 'mid' : lvl);
+    $('r-score').textContent = d.risk_score;
+    $('r-marker').style.left = Math.min(99.5, Math.max(0.5, d.probability * 100)) + '%';
+    $('r-installment').textContent = peso(d.monthly_payment);
+    $('r-dti').textContent = pct(d.dti, 0) + ' of income';
+    $('r-base').textContent = pct(d.base_rate);
+    $('r-rf').textContent = pct(d.probabilities.random_forest);
+    $('r-lr').textContent = pct(d.probabilities.logistic_regression);
+    $('r-dt').textContent = pct(d.probabilities.decision_tree);
+
+    const alerts = $('r-alerts');
+    alerts.replaceChildren(...d.alerts.map((a) => {
+      const li = document.createElement('li');
+      li.className = 'alert';
+      li.textContent = a;
+      return li;
+    }));
+
+    const max = Math.max(0.05, ...d.factors.map((f) => Math.abs(f.effect)));
+    $('r-factors').replaceChildren(...d.factors.map((f) => {
+      const row = document.createElement('div');
+      row.className = 'factor';
+      const up = f.effect > 0, w = (Math.abs(f.effect) / max) * 50;
+      row.innerHTML = `<span class="truncate"></span>
+        <span class="factor-bar"><i style="${up ? 'left' : 'right'}:50%;width:${w}%" class="${up ? 'bg-high' : 'bg-low'}"></i></span>
+        <span class="font-mono text-right ${up ? 'text-high' : 'text-low'}">${up ? '+' : '−'}${Math.abs(f.effect * 100).toFixed(1)}</span>`;
+      row.firstElementChild.textContent = f.name;
+      row.title = f.name + ' ' + f.direction;
+      return row;
+    }));
+
+    $('r-saved').textContent = d.saved ? `Saved as application #${d.application_id}.`
+                                       : 'Not saved: MySQL is not connected.';
+    if (window.innerWidth < 1024) $('dashboard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ---------------- history
+  async function loadHistory() {
+    try {
+      const res = await fetch('/api/assessments?limit=10');
+      const data = await res.json();
+      if (!data.ok || !data.items.length) return;
+      const body = document.querySelector('#history tbody');
+      body.replaceChildren(...data.items.map((r) => {
+        const tr = document.createElement('tr');
+        const cells = [r.id, r.applicant_name || '—', r.product_name || 'Other loan', peso(r.credit_amount),
+                       r.term_months + ' mo', pct(r.dti, 0), r.risk_level, r.recommendation, r.officer || '—', r.created_at];
+        cells.forEach((v, i) => {
+          const td = document.createElement('td');
+          if (i === 6) { const s = document.createElement('span'); s.className = 'pill pill-' + String(v).toLowerCase(); s.textContent = v; td.appendChild(s); }
+          else td.textContent = v;
+          tr.appendChild(td);
+        });
+        return tr;
+      }));
+    } catch (e) { /* history is optional */ }
+  }
+
+  $('reset-btn').addEventListener('click', () => {
+    setTimeout(() => { manualInstallment = false; $('recalc').hidden = true; clearErrors(); applyProduct(); }, 0);
+  });
+
+  applyProduct();
+  if (DB) loadHistory();
+})();
+</script>
+{% endblock %}

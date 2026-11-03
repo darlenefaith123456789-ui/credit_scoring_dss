@@ -1,0 +1,9 @@
+# Web application
+Flask>=3.0,<4
+PyMySQL>=1.1
+cryptography>=42      # needed by PyMySQL for MySQL 8 default authentication
+
+# Only needed to retrain the models (python model/train_models.py)
+pandas>=2.0
+numpy>=1.24
+scikit-learn>=1.4

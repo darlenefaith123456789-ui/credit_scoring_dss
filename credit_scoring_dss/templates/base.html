@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Credit Scoring DSS{% endblock %} · Credit Scoring DSS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+  {% if tailwind_local %}
+  <!-- Offline build: static/css/tailwind.css (see README, "Running without internet") -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}">
+  {% else %}
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script>
+    // Keep in sync with tailwind.config.js (used for the offline build)
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50:'#eef6f3', 100:'#d5e9e2', 600:'#23705f', 700:'#1d5c50', 800:'#174a41', 900:'#123a33' },
+            ink: '#18221f', paper: '#f3f5f2',
+            low: '#2f7a46', mid: '#a8690f', high: '#b23a2e'
+          },
+          fontFamily: {
+            display: ['Archivo', 'Helvetica Neue', 'Arial', 'sans-serif'],
+            sans: ['Public Sans', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'Menlo', 'Consolas', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  {% endif %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body class="bg-paper text-ink font-sans antialiased min-h-screen flex flex-col">
+  {% include 'components/navbar.html' %}
+  {% if user and user.default_password and active_page != 'account' %}
+  <div class="default-pw-bar" role="alert">
+    <span>You are using the default administrator password. Change it to keep the system secure.</span>
+    <a href="{{ url_for('account') }}" class="default-pw-link">Change password</a>
+  </div>
+  {% endif %}
+
+  <main class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-8">
+    {% if not_found %}
+      <div class="py-24 text-center">
+        <p class="text-sm uppercase tracking-widest text-brand-700 font-semibold">Page not found</p>
+        <h1 class="font-display text-3xl font-extrabold mt-2">That page doesn't exist.</h1>
+        <a href="{{ url_for('index') }}" class="btn-primary inline-block mt-6">Go to the home page</a>
+      </div>
+    {% endif %}
+    {% if forbidden %}
+      <div class="py-24 text-center">
+        <p class="text-sm uppercase tracking-widest text-brand-700 font-semibold">Administrators only</p>
+        <h1 class="font-display text-3xl font-extrabold mt-2">You don't have access to this page.</h1>
+        <a href="{{ url_for('index') }}" class="btn-primary inline-block mt-6">Go to the home page</a>
+      </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+
+  {% include 'components/footer.html' %}
+  {% block scripts %}{% endblock %}
+</body>
+</html>

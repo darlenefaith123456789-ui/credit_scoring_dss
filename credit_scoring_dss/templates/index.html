@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<section class="grid lg:grid-cols-[1.3fr_1fr] gap-10 items-center py-6">
+  <div>
+    <p class="eyebrow">Credit Scoring Decision Support System</p>
+    <h1 class="font-display font-extrabold text-4xl sm:text-5xl leading-tight mt-2 text-balance">
+      Decide on installment loan applications faster and more consistently.
+    </h1>
+    <p class="mt-4 text-lg text-slate-600 max-w-xl">
+      Enter an applicant's details and the loan they are asking for. The system checks them against
+      what it learned from past financing records and tells you how risky the applicant is, what it
+      recommends, and why.
+    </p>
+    <div class="flex flex-wrap gap-3 mt-6">
+      <a href="{{ url_for('predict') }}" class="btn-primary">Assess an applicant</a>
+    </div>
+  </div>
+
+  <div class="card p-6">
+    <p class="eyebrow">What the result means</p>
+    <ul class="mt-4 grid gap-4">
+      <li class="flex items-start justify-between gap-4">
+        <span><span class="pill pill-low">Low risk</span>
+          <span class="block text-sm text-slate-600 mt-1">Likely to pay on time.</span></span>
+        <span class="font-semibold text-low">Approve</span>
+      </li>
+      <li class="flex items-start justify-between gap-4">
+        <span><span class="pill pill-medium">Medium risk</span>
+          <span class="block text-sm text-slate-600 mt-1">Some warning signs. Look closer.</span></span>
+        <span class="font-semibold text-mid">Review</span>
+      </li>
+      <li class="flex items-start justify-between gap-4">
+        <span><span class="pill pill-high">High risk</span>
+          <span class="block text-sm text-slate-600 mt-1">Similar to past borrowers who defaulted.</span></span>
+        <span class="font-semibold text-high">Reject</span>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<section class="mt-12">
+  <h2 class="section-title">How to use it</h2>
+  <ol class="grid sm:grid-cols-3 gap-4 mt-5">
+    {% set steps = [
+      ('Enter the application', 'Fill in the applicant’s personal details, income, existing debt, the loan amount and term, and their past repayment record.'),
+      ('Read the recommendation', 'The system shows the risk level, a credit score out of 100, and the main reasons that raised or lowered the risk.'),
+      ('Make the decision', 'Use the recommendation together with your own judgment. Every assessment is saved so it can be reviewed later.')
+    ] %}
+    {% for title, text in steps %}
+    <li class="card p-5">
+      <span class="step-num">{{ loop.index }}</span>
+      <h3 class="font-display font-bold mt-3">{{ title }}</h3>
+      <p class="text-sm text-slate-600 mt-1">{{ text }}</p>
+    </li>
+    {% endfor %}
+  </ol>
+</section>
+
+<section class="mt-12 grid lg:grid-cols-2 gap-8">
+  <div>
+    <h2 class="section-title">What the system looks at</h2>
+    <ul class="grid sm:grid-cols-2 gap-3 mt-5">
+      {% for title, text in [
+        ('Applicant', 'Age, marital status and occupation'),
+        ('Ability to pay', 'Monthly income, existing debt, and how much of the income the installment takes'),
+        ('The loan', 'Amount, term, interest rate and how interest is computed'),
+        ('Payment history', 'Missed payments and late payment penalties on past loans')
+      ] %}
+      <li class="look-item">
+        <p class="font-semibold">{{ title }}</p>
+        <p class="text-sm text-slate-600">{{ text }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="card p-6 self-start">
+    <h2 class="section-title">Good to know</h2>
+    <ul class="grid gap-3 mt-4 text-sm text-slate-600 list-disc pl-5">
+      <li>The system supports the loan officer. The final decision is always yours.</li>
+      <li>Results are only as good as the information entered, so check the details before assessing.</li>
+      <li>The same applicant details always give the same result, so every applicant is judged the same way.</li>
+    </ul>
+  </div>
+</section>
+{% endblock %}

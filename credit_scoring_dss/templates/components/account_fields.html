@@ -1,0 +1,62 @@
+{# Shared fields for creating an account (account request page and Users page) #}
+{% macro account_fields(values, errors, show_role=False) -%}
+<label class="field">
+  <span>Full name</span>
+  <input name="full_name" type="text" class="input {% if errors.full_name %}input-invalid{% endif %}"
+         value="{{ values.full_name or '' }}" maxlength="120" autocomplete="name" required placeholder="e.g. Maria Santos">
+  {% if errors.full_name %}<small class="field-error">{{ errors.full_name }}</small>{% endif %}
+</label>
+<label class="field">
+  <span>Username</span>
+  <input name="username" type="text" class="input {% if errors.username %}input-invalid{% endif %}"
+         value="{{ values.username or '' }}" maxlength="50" autocomplete="username" required
+         autocapitalize="none" spellcheck="false" placeholder="e.g. msantos">
+  {% if errors.username %}<small class="field-error">{{ errors.username }}</small>
+  {% else %}<small class="text-xs text-slate-500">Letters, numbers, dot, dash or underscore.</small>{% endif %}
+</label>
+{% if show_role %}
+<label class="field">
+  <span>Role</span>
+  <select name="role" class="input">
+    <option value="officer" {% if values.role != 'admin' %}selected{% endif %}>Loan officer · assesses applicants</option>
+    <option value="admin" {% if values.role == 'admin' %}selected{% endif %}>Administrator · also manages accounts</option>
+  </select>
+</label>
+{% endif %}
+<label class="field">
+  <span class="flex justify-between">Password
+    <button type="button" class="link-btn" data-toggle-password>Show</button>
+  </span>
+  <input name="password" type="password" class="input {% if errors.password %}input-invalid{% endif %}"
+         minlength="{{ min_password }}" autocomplete="new-password" required>
+  {% if errors.password %}<small class="field-error">{{ errors.password }}</small>
+  {% else %}<small class="text-xs text-slate-500">At least {{ min_password }} characters.</small>{% endif %}
+</label>
+<label class="field">
+  <span>Confirm password</span>
+  <input name="confirm" type="password" class="input {% if errors.confirm %}input-invalid{% endif %}"
+         autocomplete="new-password" required>
+  {% if errors.confirm %}<small class="field-error">{{ errors.confirm }}</small>{% endif %}
+</label>
+{%- endmacro %}
+
+{% macro flashes() -%}
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for category, message in messages %}
+    <p class="{{ 'alert' if category == 'error' else 'notice-info' }}" role="alert">{{ message }}</p>
+  {% endfor %}
+{% endwith %}
+{%- endmacro %}
+
+{% macro password_toggle_script() -%}
+<script>
+  document.querySelectorAll('[data-toggle-password]').forEach(function (btn) {
+    var input = btn.closest('label').querySelector('input');
+    btn.addEventListener('click', function () {
+      var show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      btn.textContent = show ? 'Hide' : 'Show';
+    });
+  });
+</script>
+{%- endmacro %}

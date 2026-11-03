@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}Sign in{% endblock %}
+
+{% block content %}
+<div class="grid lg:grid-cols-2 gap-0 card overflow-hidden max-w-4xl mx-auto mt-4 sm:mt-10">
+  <section class="bg-brand-900 text-brand-50 p-8 sm:p-10 flex flex-col justify-between gap-10">
+    <div>
+      <p class="text-xs uppercase tracking-widest text-brand-100/80 font-semibold">Decision support for loan officers</p>
+      <h1 class="font-display font-extrabold text-3xl sm:text-4xl leading-tight mt-3 text-balance">
+        Credit Scoring Decision Support System
+      </h1>
+      <p class="mt-4 text-brand-100/90">
+        Assess installment-financing applicants with a Random Forest model trained on historical financing records.
+      </p>
+    </div>
+    <ul class="grid gap-3 text-sm">
+      <li class="flex gap-3"><span class="login-dot bg-low"></span>Low risk · Approve</li>
+      <li class="flex gap-3"><span class="login-dot bg-mid"></span>Medium risk · Refer for review</li>
+      <li class="flex gap-3"><span class="login-dot bg-high"></span>High risk · Reject</li>
+    </ul>
+  </section>
+
+  <section class="p-8 sm:p-10">
+    <h2 class="font-display font-bold text-2xl">Sign in</h2>
+    <p class="text-sm text-slate-600 mt-1">Use the account given to you by the system administrator.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <p class="{{ 'alert' if category == 'error' else 'notice-info' }} mt-5" role="alert">{{ message }}</p>
+      {% endfor %}
+    {% endwith %}
+
+    {% if not db_available %}
+      <p class="notice mt-5">MySQL is not connected, so sign-in is unavailable. Start MySQL (for example in XAMPP) and restart the app.</p>
+    {% endif %}
+
+    <form method="post" class="grid gap-4 mt-6" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="field">
+        <span>Username</span>
+        <input id="username" name="username" type="text" class="input" autocomplete="username"
+               value="{{ username }}" required autofocus>
+      </label>
+      <label class="field">
+        <span class="flex justify-between">Password
+          <button type="button" class="link-btn" id="toggle-password" aria-controls="password">Show</button>
+        </span>
+        <input id="password" name="password" type="password" class="input" autocomplete="current-password" required>
+      </label>
+      <button type="submit" class="btn-primary w-full mt-2">Sign in</button>
+    </form>
+    <div class="border-t border-slate-200 mt-6 pt-5 flex flex-wrap items-center justify-between gap-3">
+      <p class="text-sm text-slate-600">New loan officer?</p>
+      <a href="{{ url_for('register') }}" class="btn-ghost btn-sm">Request an account</a>
+    </div>
+    <p class="text-xs text-slate-500 mt-4">Forgot your password? Ask the administrator to reset it.</p>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    var btn = document.getElementById('toggle-password'), input = document.getElementById('password');
+    btn.addEventListener('click', function () {
+      var show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      btn.textContent = show ? 'Hide' : 'Show';
+    });
+  })();
+</script>
+{% endblock %}

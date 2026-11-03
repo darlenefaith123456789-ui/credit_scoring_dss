@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% from 'components/account_fields.html' import flashes, password_toggle_script with context %}
+{% block title %}My account{% endblock %}
+
+{% macro error(errors, field) -%}
+{% if errors[field] %}<small class="field-error">{{ errors[field] }}</small>{% endif %}
+{%- endmacro %}
+
+{% block content %}
+<div class="flex flex-wrap items-end justify-between gap-3 border-b-2 border-ink pb-4">
+  <div>
+    <p class="eyebrow">{{ 'Administrator' if user.role == 'admin' else 'Loan officer' }}</p>
+    <h1 class="font-display font-extrabold text-3xl">My account</h1>
+  </div>
+</div>
+
+<div class="grid gap-2 mt-5">
+  {{ flashes() }}
+  {% if user.default_password %}
+  <p class="alert" role="alert">
+    You are signed in with the default password <b>admin</b>. Anyone who knows it can sign in as you.
+    Change your password below, and consider changing the username too.
+  </p>
+  {% endif %}
+</div>
+
+<div class="grid lg:grid-cols-2 gap-8 mt-5 items-start">
+  <section class="card p-6">
+    <h2 class="section-title">Name and username</h2>
+    <p class="text-sm text-slate-600 mt-1">The username is what you type when you sign in.</p>
+    <form method="post" class="grid gap-4 mt-5" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="section" value="profile">
+      <label class="field">
+        <span>Full name</span>
+        <input name="full_name" type="text" maxlength="120" autocomplete="name" required
+               class="input {% if profile_errors.full_name %}input-invalid{% endif %}"
+               value="{{ form.full_name if form.section == 'profile' else user.full_name }}">
+        {{ error(profile_errors, 'full_name') }}
+      </label>
+      <label class="field">
+        <span>Username</span>
+        <input name="username" type="text" maxlength="50" autocomplete="username" required
+               autocapitalize="none" spellcheck="false"
+               class="input {% if profile_errors.username %}input-invalid{% endif %}"
+               value="{{ form.username if form.section == 'profile' else user.username }}">
+        {% if profile_errors.username %}{{ error(profile_errors, 'username') }}
+        {% else %}<small class="text-xs text-slate-500">Letters, numbers, dot, dash or underscore.</small>{% endif %}
+      </label>
+      <button type="submit" class="btn-primary justify-self-start">Save name and username</button>
+    </form>
+  </section>
+
+  <section class="card p-6 {% if user.default_password %}card-attention{% endif %}">
+    <h2 class="section-title">Change password</h2>
+    <p class="text-sm text-slate-600 mt-1">Use at least {{ min_password }} characters.</p>
+    <form method="post" class="grid gap-4 mt-5" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="section" value="password">
+      <label class="field">
+        <span class="flex justify-between">Current password
+          <button type="button" class="link-btn" data-toggle-password>Show</button>
+        </span>
+        <input name="current_password" type="password" autocomplete="current-password" required
+               class="input {% if password_errors.current_password %}input-invalid{% endif %}">
+        {{ error(password_errors, 'current_password') }}
+      </label>
+      <label class="field">
+        <span class="flex justify-between">New password
+          <button type="button" class="link-btn" data-toggle-password>Show</button>
+        </span>
+        <input name="new_password" type="password" minlength="{{ min_password }}" autocomplete="new-password" required
+               class="input {% if password_errors.new_password %}input-invalid{% endif %}">
+        {{ error(password_errors, 'new_password') }}
+      </label>
+      <label class="field">
+        <span>Confirm new password</span>
+        <input name="confirm_password" type="password" autocomplete="new-password" required
+               class="input {% if password_errors.confirm_password %}input-invalid{% endif %}">
+        {{ error(password_errors, 'confirm_password') }}
+      </label>
+      <button type="submit" class="btn-primary justify-self-start">Change password</button>
+    </form>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}{{ password_toggle_script() }}{% endblock %}
